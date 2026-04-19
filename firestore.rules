@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com'); }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // User Profile Rules
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'fullName', 'username', 'gender', 'age', 'country', 'city', 
+          'interests', 'profilePicture', 'bio', 'lastActive', 'preferences',
+          'uid', 'email', 'badges', 'createdAt'
+        ]) &&
+        incoming().uid == existing().uid &&
+        incoming().email == existing().email
+      );
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['fullName', 'username', 'email', 'gender', 'age']) &&
+             data.fullName is string &&
+             data.username is string &&
+             data.email is string &&
+             data.gender in ['Male', 'Female', 'Other'] &&
+             data.age is number && data.age >= 13;
+    }
+
+    // Match Rules
+    match /matches/{matchId} {
+      allow get: if isSignedIn() && request.auth.uid in resource.data.userIds;
+      allow list: if isSignedIn() && request.auth.uid in resource.data.userIds;
+      allow create: if isSignedIn() && request.auth.uid in incoming().userIds;
+      allow update: if isSignedIn() && request.auth.uid in existing().userIds && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'lastMessage', 'lastMessageAt'])
+      );
+
+      // Message Rules (Sub-collection)
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.userIds;
+        allow create: if isSignedIn() && 
+                      request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.userIds &&
+                      incoming().senderId == request.auth.uid;
+      }
+    }
+
+    // Notification Rules
+    match /users/{userId}/notifications/{notificationId} {
+      allow read, update, delete: if isOwner(userId);
+      allow create: if isSignedIn() && (
+        isOwner(userId) || 
+        // Allow match to create notification (e.g. for new messages)
+        exists(/databases/$(database)/documents/matches/$(incoming().matchId)) &&
+        request.auth.uid in get(/databases/$(database)/documents/matches/$(incoming().matchId)).data.userIds &&
+        userId in get(/databases/$(database)/documents/matches/$(incoming().matchId)).data.userIds
+      );
+    }
+  }
+}
