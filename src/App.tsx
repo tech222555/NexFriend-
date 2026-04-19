@@ -11,6 +11,9 @@ import ChatRoom from './components/chat/ChatRoom';
 import Profile from './components/profile/Profile';
 import { useNotifications } from './hooks/useNotifications';
 
+import SplashScreen from './components/layout/SplashScreen';
+import { AnimatePresence } from 'motion/react';
+
 function PrivateRoute({ children, requireProfile = true }: { children: React.ReactNode, requireProfile?: boolean }) {
   const { user, profile, loading } = useAuth();
   useNotifications(); // Listen for notifications while in private routes
@@ -30,8 +33,24 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = React.useState(() => {
+    // Only show splash screen once per session
+    if (typeof window !== 'undefined') {
+      return !sessionStorage.getItem('splashShown');
+    }
+    return true;
+  });
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+    sessionStorage.setItem('splashShown', 'true');
+  };
+
   return (
     <AuthProvider>
+      <AnimatePresence>
+        {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+      </AnimatePresence>
       <Router>
         <Routes>
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />

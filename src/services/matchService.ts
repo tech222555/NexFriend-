@@ -15,10 +15,23 @@ import { UserProfile, Match } from '../types';
 
 export const matchService = {
   async getPotentialMatches(user: UserProfile) {
-    // Basic recommendation logic
+    // 1. Get IDs of people the user has already matched with
+    const matchesQ = query(
+      collection(db, 'matches'),
+      where('userIds', 'array-contains', user.uid)
+    );
+    const matchesSnap = await getDocs(matchesQ);
+    const matchedUserIds = matchesSnap.docs.reduce((acc: string[], doc) => {
+      const data = doc.data();
+      const otherId = data.userIds.find((id: string) => id !== user.uid);
+      if (otherId) acc.push(otherId);
+      return acc;
+    }, []);
+
+    // 2. Fetch potential users
     const q = query(
       collection(db, 'users'),
-      limit(20)
+      limit(50)
     );
     
     const snapshot = await getDocs(q);
@@ -26,6 +39,7 @@ export const matchService = {
       .map(doc => ({ ...doc.data(), uid: doc.id } as UserProfile))
       .filter(p => {
         if (p.uid === user.uid) return false;
+        if (matchedUserIds.includes(p.uid)) return false;
         if (user.preferences.gender !== 'All' && p.gender !== user.preferences.gender) return false;
         return true;
       });
@@ -64,8 +78,8 @@ export const matchService = {
 
     // Create a notification for the matched user
     await addDoc(collection(db, `users/${targetId}/notifications`), {
-      type: 'match',
-      fromUserId: userId,
+      matchId: docRef.id,
+      title: 'New Match! 💖',
       message: 'Someone wants to be your friend!',
       read: false,
       createdAt: serverTimestamp()

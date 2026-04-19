@@ -75,7 +75,7 @@ export default function Discover() {
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">You've explored the globe!</h2>
         <p className="text-gray-500 max-w-sm mx-auto mb-8">
-          Check back later for new people or invite your friends to NexFriend.
+          Check back later for new people or invite your friends to Meetora connect.
         </p>
         <button 
           onClick={loadMatches}

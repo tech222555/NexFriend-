@@ -18,33 +18,38 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isOwner(userId) && isValidUser(incoming());
-      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+      allow update: if isOwner(userId) && (
+        // Allow updating specific keys if they are valid
         incoming().diff(existing()).affectedKeys().hasOnly([
           'fullName', 'username', 'gender', 'age', 'country', 'city', 
           'interests', 'profilePicture', 'bio', 'lastActive', 'preferences',
           'uid', 'email', 'badges', 'createdAt'
         ]) &&
+        // Ensure critical fields don't change
         incoming().uid == existing().uid &&
-        incoming().email == existing().email
+        incoming().email == existing().email &&
+        // Minimum age requirement
+        (incoming().age == null || (incoming().age is number && incoming().age >= 13))
       );
     }
 
     function isValidUser(data) {
-      return data.keys().hasAll(['fullName', 'username', 'email', 'gender', 'age']) &&
-             data.fullName is string &&
-             data.username is string &&
-             data.email is string &&
-             data.gender in ['Male', 'Female', 'Other'] &&
-             data.age is number && data.age >= 13;
+      return data.keys().hasAll(['fullName', 'username', 'email']) &&
+             data.fullName is string && data.fullName.size() <= 100 &&
+             data.username is string && data.username.size() <= 30 &&
+             data.email is string && data.email.size() <= 100;
     }
 
     // Match Rules
     match /matches/{matchId} {
-      allow get: if isSignedIn() && request.auth.uid in resource.data.userIds;
-      allow list: if isSignedIn() && request.auth.uid in resource.data.userIds;
-      allow create: if isSignedIn() && request.auth.uid in incoming().userIds;
+      allow get, list: if isSignedIn() && request.auth.uid in resource.data.userIds;
+      allow create: if isSignedIn() && (
+        request.auth.uid in incoming().userIds &&
+        incoming().userIds.size() == 2 &&
+        incoming().status == 'pending'
+      );
       allow update: if isSignedIn() && request.auth.uid in existing().userIds && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'lastMessage', 'lastMessageAt'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'lastMessage', 'lastMessageAt', 'createdAt'])
       );
 
       // Message Rules (Sub-collection)
@@ -52,7 +57,8 @@ service cloud.firestore {
         allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.userIds;
         allow create: if isSignedIn() && 
                       request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.userIds &&
-                      incoming().senderId == request.auth.uid;
+                      incoming().senderId == request.auth.uid &&
+                      incoming().text is string && incoming().text.size() <= 2000;
       }
     }
 
@@ -61,10 +67,11 @@ service cloud.firestore {
       allow read, update, delete: if isOwner(userId);
       allow create: if isSignedIn() && (
         isOwner(userId) || 
-        // Allow match to create notification (e.g. for new messages)
-        exists(/databases/$(database)/documents/matches/$(incoming().matchId)) &&
-        request.auth.uid in get(/databases/$(database)/documents/matches/$(incoming().matchId)).data.userIds &&
-        userId in get(/databases/$(database)/documents/matches/$(incoming().matchId)).data.userIds
+        // Allow creating notifications for matches
+        (incoming().matchId != null && 
+         exists(/databases/$(database)/documents/matches/$(incoming().matchId)) &&
+         request.auth.uid in get(/databases/$(database)/documents/matches/$(incoming().matchId)).data.userIds &&
+         userId in get(/databases/$(database)/documents/matches/$(incoming().matchId)).data.userIds)
       );
     }
   }

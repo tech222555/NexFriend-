@@ -43,8 +43,8 @@ export interface Message {
 
 export interface Notification {
   id: string;
-  type: 'match' | 'message' | 'friend_request';
-  fromUserId: string;
+  matchId?: string;
+  title: string;
   message: string;
   read: boolean;
   createdAt: any;

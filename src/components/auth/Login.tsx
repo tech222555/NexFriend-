@@ -33,10 +33,10 @@ export default function Login() {
       >
         <div className="text-center mb-10">
           <div className="w-20 h-20 gradient-pink rounded-3xl flex items-center justify-center text-white mx-auto shadow-xl mb-6">
-            <span className="text-4xl font-black italic">N</span>
+            <span className="text-4xl font-black italic">M</span>
           </div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">Welcome Back</h1>
-          <p className="text-gray-500 font-medium">Log in to your NexFriend account</p>
+          <p className="text-gray-500 font-medium">Log in to your Meetora connect account</p>
         </div>
 
         {error && (
@@ -69,7 +69,7 @@ export default function Login() {
 
         <div className="mt-10 pt-8 border-t border-gray-100 text-center">
           <p className="text-gray-500 font-medium">
-            New to NexFriend?{' '}
+            New to Meetora connect?{' '}
             <Link to="/signup" className="text-pink-600 font-bold hover:underline">
               Create Account
             </Link>

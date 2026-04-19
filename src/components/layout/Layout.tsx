@@ -28,10 +28,10 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-10 h-10 gradient-pink rounded-xl flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
-              <span className="text-xl font-bold">N</span>
+              <span className="text-xl font-bold">M</span>
             </div>
             <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-pink-600 to-purple-600 hidden sm:block">
-              NexFriend
+              Meetora connect
             </span>
           </Link>
 
@@ -75,7 +75,7 @@ export default function Layout() {
       <footer className="bg-footer text-gray-400 py-12 px-4">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
           <div>
-            <h3 className="text-white font-bold text-lg mb-4">NexFriend</h3>
+            <h3 className="text-white font-bold text-lg mb-4">Meetora connect</h3>
             <p className="text-sm leading-relaxed">
               Connecting the world, one friendship at a time. Join our global community and find your next best friend.
             </p>
@@ -94,7 +94,7 @@ export default function Layout() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-gray-800 text-center text-xs">
-          © 2026 NexFriend Platform. All rights reserved.
+          © 2026 Meetora connect Platform. All rights reserved.
         </div>
       </footer>
 

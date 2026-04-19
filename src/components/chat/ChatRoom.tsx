@@ -53,6 +53,10 @@ export default function ChatRoom() {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const getProfilePic = (pic?: string, seed?: string) => {
+    return pic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed || 'default'}`;
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !id || !user || isModerating) return;
@@ -92,7 +96,7 @@ export default function ChatRoom() {
           </button>
           <div className="relative">
             <img 
-              src={otherUser?.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${id}`} 
+              src={getProfilePic(otherUser?.profilePicture, id)} 
               className="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover" 
               alt="Avatar" 
             />
@@ -143,7 +147,7 @@ export default function ChatRoom() {
               )}>
                 {!isMe && (
                    <img 
-                    src={otherUser?.profilePicture} 
+                    src={getProfilePic(otherUser?.profilePicture, otherUser?.uid)} 
                     className="w-8 h-8 rounded-full object-cover hidden sm:block border border-gray-200" 
                     referrerPolicy="no-referrer"
                     alt="" 

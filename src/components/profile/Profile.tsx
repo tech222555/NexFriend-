@@ -13,6 +13,13 @@ export default function Profile() {
   const [editData, setEditData] = useState(profile);
   const [loading, setLoading] = useState(false);
 
+  // Keep editData in sync with profile updates from server
+  React.useEffect(() => {
+    if (!isEditing) {
+      setEditData(profile);
+    }
+  }, [profile, isEditing]);
+
   if (!profile) return null;
 
   const handleSave = async () => {

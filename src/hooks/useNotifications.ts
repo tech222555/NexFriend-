@@ -27,7 +27,7 @@ export function useNotifications() {
           
           // Show browser notification if the tab is in background or not focused
           if (document.visibilityState === 'hidden' || Notification.permission === 'granted') {
-            const n = new Notification(notification.title || 'NexFriend', {
+            const n = new Notification(notification.title || 'Meetora connect', {
               body: notification.message,
               icon: '/vite.svg', // Fallback icon
               tag: notification.matchId || 'general',

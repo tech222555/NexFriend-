@@ -14,10 +14,17 @@ const INTEREST_OPTIONS = [
 ];
 
 export default function OnboardingFlow() {
-  const { user, setProfile } = useAuth();
+  const { user, profile, setProfile } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const totalSteps = 4;
+
+  // Prevent users who already have a profile from accessing onboarding
+  React.useEffect(() => {
+    if (profile) {
+      navigate('/');
+    }
+  }, [profile, navigate]);
 
   const [formData, setFormData] = useState({
     fullName: '',

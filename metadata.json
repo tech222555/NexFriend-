@@ -1,6 +1,6 @@
 {
-  "name": "NexFriend – Smart Friend Finder Platform",
-  "description": "NexFriend is a modern social platform designed to connect people worldwide through smart matching, real-time chat, and AI-powered friendship suggestions. Features include instant matching, multi-language chat translation, and interactive discover feeds.",
+  "name": "Meetora connect – Smart Friend Finder Platform",
+  "description": "Meetora connect is a modern social platform designed to connect people worldwide through smart matching, real-time chat, and AI-powered friendship suggestions. Features include instant matching, multi-language chat translation, and interactive discover feeds.",
   "requestFramePermissions": ["camera", "microphone", "geolocation"],
   "majorCapabilities": ["Real-time Chat", "AI Matching", "Global Discovery"]
 }

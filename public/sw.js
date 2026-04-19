@@ -1,4 +1,4 @@
-// Basic Service Worker for NexFriend Notifications
+// Basic Service Worker for Meetora connect Notifications
 self.addEventListener('push', (event) => {
   if (event.data) {
     const data = event.data.json();
@@ -12,7 +12,7 @@ self.addEventListener('push', (event) => {
     };
 
     event.waitUntil(
-      self.registration.showNotification(data.title || 'NexFriend', options)
+      self.registration.showNotification(data.title || 'Meetora connect', options)
     );
   }
 });

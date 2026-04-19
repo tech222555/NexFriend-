@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { UserProfile } from '../types';
 
 interface AuthContextType {
@@ -24,24 +24,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      if (user) {
-        const docRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(docRef);
+      if (!user) {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    let unsubscribeProfile: (() => void) | null = null;
+
+    if (user) {
+      const docRef = doc(db, 'users', user.uid);
+      unsubscribeProfile = onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
           setProfile({ uid: user.uid, ...docSnap.data() } as UserProfile);
         } else {
           setProfile(null);
         }
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    });
+        setLoading(false);
+      }, (error) => {
+        console.error("Profile sync error:", error);
+        setLoading(false);
+      });
+    }
 
-    return unsubscribe;
-  }, []);
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, setProfile }}>
