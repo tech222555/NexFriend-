@@ -17,6 +17,7 @@ export default function OnboardingFlow() {
   const { user, profile, setProfile } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [error, setError] = useState<string | null>(null);
   const totalSteps = 4;
 
   // Prevent users who already have a profile from accessing onboarding
@@ -60,9 +61,9 @@ export default function OnboardingFlow() {
       await setDoc(doc(db, 'users', user.uid), profile);
       setProfile(profile);
       navigate('/');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving profile:', err);
-      alert('Failed to save profile. Please try again.');
+      setError(err?.message || 'Failed to save profile. Please try again.');
     }
   };
 
@@ -85,12 +86,32 @@ export default function OnboardingFlow() {
       setFormData(prev => ({ ...prev, profilePicture: resized }));
     } catch (err) {
       console.error('Image upload failed:', err);
-      alert('Failed to process image. Please try another one.');
+      setError('Failed to process image. Please try another one.');
     }
   };
 
   return (
     <div className="max-w-xl mx-auto py-10">
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6 p-4 bg-rose-50 border border-rose-100/80 rounded-2xl text-rose-650 text-xs font-bold flex justify-between items-center"
+          >
+            <span>{error}</span>
+            <button 
+              type="button"
+              onClick={() => setError(null)} 
+              className="text-rose-500 hover:text-rose-700 transition-colors uppercase tracking-widest text-[9px]"
+            >
+              Dismiss
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="mb-10">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-900">Let's set up your profile</h2>

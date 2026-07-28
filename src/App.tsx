@@ -6,17 +6,17 @@ import Login from './components/auth/Login';
 import SignUp from './components/auth/SignUp';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import Discover from './components/discover/Discover';
-import ChatList from './components/chat/ChatList';
-import ChatRoom from './components/chat/ChatRoom';
+import ChatWorkspace from './components/chat/ChatWorkspace';
 import Profile from './components/profile/Profile';
-import { useNotifications } from './hooks/useNotifications';
+import Likes from './components/discover/Likes';
+import StatusWorkspace from './components/status/StatusWorkspace';
+import UserSearch from './components/search/UserSearch';
 
 import SplashScreen from './components/layout/SplashScreen';
 import { AnimatePresence } from 'motion/react';
 
 function PrivateRoute({ children, requireProfile = true }: { children: React.ReactNode, requireProfile?: boolean }) {
   const { user, profile, loading } = useAuth();
-  useNotifications(); // Listen for notifications while in private routes
   
   if (loading) return <div className="flex items-center justify-center h-[70vh]"><div className="w-10 h-10 border-4 border-pink-100 border-t-pink-500 rounded-full animate-spin" /></div>;
   if (!user) return <Navigate to="/login" />;
@@ -58,9 +58,12 @@ export default function App() {
           
           <Route element={<Layout />}>
             <Route path="/" element={<PrivateRoute><Discover /></PrivateRoute>} />
+            <Route path="/search" element={<PrivateRoute><UserSearch /></PrivateRoute>} />
             <Route path="/onboarding" element={<PrivateRoute requireProfile={false}><OnboardingFlow /></PrivateRoute>} />
-            <Route path="/chats" element={<PrivateRoute><ChatList /></PrivateRoute>} />
-            <Route path="/chat/:id" element={<PrivateRoute><ChatRoom /></PrivateRoute>} />
+            <Route path="/chats" element={<PrivateRoute><ChatWorkspace /></PrivateRoute>} />
+            <Route path="/chat/:id" element={<PrivateRoute><ChatWorkspace /></PrivateRoute>} />
+            <Route path="/status" element={<PrivateRoute><StatusWorkspace /></PrivateRoute>} />
+            <Route path="/likes" element={<PrivateRoute><Likes /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           </Route>
         </Routes>

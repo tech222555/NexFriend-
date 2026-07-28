@@ -30,15 +30,32 @@ export interface Match {
   createdAt: any;
   lastMessage?: string;
   lastMessageAt?: any;
+  lastMessageSenderId?: string;
+  lastMessageRead?: boolean;
+  typing?: Record<string, boolean>;
+  isGroup?: boolean;
+  groupName?: string;
+  groupIcon?: string;
+  groupDescription?: string;
+  createdBy?: string;
+  admins?: string[];
 }
 
 export interface Message {
   id: string;
   senderId: string;
+  senderName?: string;
   text: string;
   createdAt: any;
   read: boolean;
   translations?: Record<string, string>;
+  audioUrl?: string;
+  imageUrl?: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: string;
+  mediaType?: 'voice' | 'image' | 'file';
+  reactions?: Record<string, string[]>; // mapping of emoji (string) to user UIDs (string[]) who reacted
 }
 
 export interface Notification {
@@ -48,4 +65,18 @@ export interface Notification {
   message: string;
   read: boolean;
   createdAt: any;
+}
+
+export interface StatusUpdate {
+  id: string;
+  userId: string;
+  userFullName: string;
+  userProfilePicture: string;
+  type: 'text' | 'image' | 'video';
+  content: string; // text or Base64/url
+  bgGradient?: string; // e.g. 'from-purple-500 to-indigo-500'
+  textColor?: string; // e.g. '#ffffff'
+  createdAt: any;
+  expiresAt: any;
+  viewerIds: string[]; // List of user IDs permitted to view this status
 }

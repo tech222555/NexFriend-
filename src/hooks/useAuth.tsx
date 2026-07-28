@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { UserProfile } from '../types';
 
 interface AuthContextType {
@@ -24,36 +24,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (!user) {
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      if (!firebaseUser) {
         setProfile(null);
         setLoading(false);
       }
     });
 
-    let unsubscribeProfile: (() => void) | null = null;
+    return unsubscribeAuth;
+  }, []);
 
-    if (user) {
-      const docRef = doc(db, 'users', user.uid);
-      unsubscribeProfile = onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setProfile({ uid: user.uid, ...docSnap.data() } as UserProfile);
-        } else {
-          setProfile(null);
-        }
-        setLoading(false);
-      }, (error) => {
-        console.error("Profile sync error:", error);
-        setLoading(false);
-      });
+  useEffect(() => {
+    if (!user) {
+      setProfile(null);
+      return;
     }
 
+    const docRef = doc(db, 'users', user.uid);
+    const unsubscribeProfile = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setProfile({ uid: user.uid, ...docSnap.data() } as UserProfile);
+      } else {
+        setProfile(null);
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Profile sync error:", error);
+      setLoading(false);
+    });
+
     return () => {
-      unsubscribeAuth();
-      if (unsubscribeProfile) unsubscribeProfile();
+      unsubscribeProfile();
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !profile) return;
+
+    const updatePresence = async (isActive = true) => {
+      try {
+        await updateDoc(doc(db, 'users', user.uid), {
+          lastActive: isActive ? serverTimestamp() : new Date(0)
+        });
+      } catch (err) {
+        console.error('Failed to update presence status:', err);
+      }
+    };
+
+    // Update immediately on mount / user change
+    updatePresence(true);
+
+    // Set up active presence tracker interval (every 1 minute)
+    const intervalId = setInterval(() => updatePresence(true), 1 * 60 * 1000);
+
+    const handleBeforeUnload = () => {
+      // Promptly inform that the user is exiting before the connection/process dies
+      updateDoc(doc(db, 'users', user.uid), {
+        lastActive: new Date(0)
+      }).catch(() => {});
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      handleBeforeUnload();
+    };
+  }, [user?.uid, profile?.uid]);
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, setProfile }}>

@@ -34,10 +34,9 @@ service cloud.firestore {
     }
 
     function isValidUser(data) {
-      return data.keys().hasAll(['fullName', 'username', 'email']) &&
-             data.fullName is string && data.fullName.size() <= 100 &&
-             data.username is string && data.username.size() <= 30 &&
-             data.email is string && data.email.size() <= 100;
+      return ('fullName' in data) && (data.fullName is string) && (data.fullName.size() <= 120) &&
+             ('username' in data) && (data.username is string) && (data.username.size() <= 50) &&
+             ('email' in data) && (data.email is string) && (data.email.size() <= 120);
     }
 
     // Match Rules
@@ -45,20 +44,38 @@ service cloud.firestore {
       allow get, list: if isSignedIn() && request.auth.uid in resource.data.userIds;
       allow create: if isSignedIn() && (
         request.auth.uid in incoming().userIds &&
-        incoming().userIds.size() == 2 &&
-        incoming().status == 'pending'
+        (
+          (incoming().userIds.size() == 2 && incoming().status == 'pending') ||
+          (incoming().isGroup == true && incoming().userIds.size() >= 1 && incoming().createdBy == request.auth.uid)
+        )
       );
-      allow update: if isSignedIn() && request.auth.uid in existing().userIds && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'lastMessage', 'lastMessageAt', 'createdAt'])
-      );
+      allow update: if isSignedIn() && 
+                    request.auth.uid in existing().userIds && 
+                    (!('userIds' in incoming()) || 
+                     incoming().userIds == existing().userIds || 
+                     (existing().isGroup == true && request.auth.uid in existing().userIds));
 
       // Message Rules (Sub-collection)
       match /messages/{messageId} {
         allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.userIds;
         allow create: if isSignedIn() && 
-                      request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.userIds &&
-                      incoming().senderId == request.auth.uid &&
-                      incoming().text is string && incoming().text.size() <= 2000;
+                      (!exists(/databases/$(database)/documents/matches/$(matchId)) || 
+                       request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.userIds) &&
+                      (incoming().senderId == request.auth.uid || incoming().senderId == 'system') &&
+                      incoming().text is string && incoming().text.size() <= 1100000 &&
+                      (!('senderName' in incoming()) || (incoming().senderName is string && incoming().senderName.size() <= 120)) &&
+                      (!('audioUrl' in incoming()) || (incoming().audioUrl is string && incoming().audioUrl.size() <= 1100000)) &&
+                      (!('imageUrl' in incoming()) || (incoming().imageUrl is string && incoming().imageUrl.size() <= 1100000)) &&
+                      (!('fileUrl' in incoming()) || (incoming().fileUrl is string && incoming().fileUrl.size() <= 1100000)) &&
+                      (!('fileName' in incoming()) || (incoming().fileName is string && incoming().fileName.size() <= 256)) &&
+                      (!('fileSize' in incoming()) || (incoming().fileSize is string && incoming().fileSize.size() <= 50)) &&
+                      (!('mediaType' in incoming()) || (incoming().mediaType is string && incoming().mediaType.size() <= 20)) &&
+                      (!('reactions' in incoming()) || incoming().reactions is map);
+        allow update: if isSignedIn() && 
+                      request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.userIds && (
+                        (incoming().diff(existing()).affectedKeys().hasOnly(['read']) && incoming().read == true) ||
+                        (incoming().diff(existing()).affectedKeys().hasOnly(['reactions']) && (incoming().reactions is map))
+                      );
       }
     }
 
@@ -67,12 +84,22 @@ service cloud.firestore {
       allow read, update, delete: if isOwner(userId);
       allow create: if isSignedIn() && (
         isOwner(userId) || 
+        incoming().matchId == 'status' ||
         // Allow creating notifications for matches
         (incoming().matchId != null && 
          exists(/databases/$(database)/documents/matches/$(incoming().matchId)) &&
          request.auth.uid in get(/databases/$(database)/documents/matches/$(incoming().matchId)).data.userIds &&
          userId in get(/databases/$(database)/documents/matches/$(incoming().matchId)).data.userIds)
       );
+    }
+
+    // Status Update Rules
+    match /statuses/{statusId} {
+      allow read, list: if isSignedIn() && request.auth.uid in resource.data.viewerIds;
+      allow create: if isSignedIn() && 
+                    incoming().userId == request.auth.uid &&
+                    incoming().viewerIds is list;
+      allow update, delete: if isSignedIn() && existing().userId == request.auth.uid;
     }
   }
 }

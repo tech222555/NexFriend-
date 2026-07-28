@@ -30,14 +30,20 @@
     },
     "Match": {
       "title": "Match",
-      "description": "A match between two users",
+      "description": "A match between users or a group chat",
       "type": "object",
       "properties": {
         "userIds": { "type": "array", "items": { "type": "string" } },
         "status": { "type": "string", "enum": ["pending", "active", "unmatched"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "lastMessage": { "type": "string" },
-        "lastMessageAt": { "type": "string", "format": "date-time" }
+        "lastMessageAt": { "type": "string", "format": "date-time" },
+        "isGroup": { "type": "boolean" },
+        "groupName": { "type": "string" },
+        "groupIcon": { "type": "string" },
+        "groupDescription": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "admins": { "type": "array", "items": { "type": "string" } }
       }
     },
     "Message": {
@@ -46,6 +52,7 @@
       "type": "object",
       "properties": {
         "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
         "text": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "read": { "type": "boolean" },
@@ -63,6 +70,24 @@
         "read": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       }
+    },
+    "Status": {
+      "title": "Status",
+      "description": "WhatsApp-like User Status Updates",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userFullName": { "type": "string" },
+        "userProfilePicture": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "image", "video"] },
+        "content": { "type": "string" },
+        "bgGradient": { "type": "string" },
+        "textColor": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "viewerIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["userId", "type", "content", "createdAt", "viewerIds"]
     }
   },
   "firestore": {
@@ -81,6 +106,10 @@
     "/users/{userId}/notifications/{notificationId}": {
       "schema": "Notification",
       "description": "Notifications for a specific user"
+    },
+    "/statuses/{statusId}": {
+      "schema": "Status",
+      "description": "User shared stories/status updates with customized viewers"
     }
   }
 }
